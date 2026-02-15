@@ -94,4 +94,195 @@
         <!-- Progress Area -->
         <div id="progressArea" class="hidden mt-6 space-y-3">
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-3
+                <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <p id="statusText" class="text-center text-xs font-medium text-gray-500 dark:text-gray-400">Preparing...</p>
+        </div>
+
+        <!-- Result Message -->
+        <div id="resultMessage" class="hidden mt-4 p-3 rounded-lg text-center text-sm font-semibold"></div>
+    </div>
+
+    <script>
+        // ******************************************************
+        // REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5DUIpMA0UrDeJ9OJEyyJJyGXqGydCAQRKW-JyssL6nNc4TmLoLBlA-EojEvC98gOHgQ/exec';
+        // ******************************************************
+
+        // Theme Toggle Logic
+        const toggleBtn = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement;
+
+        // Check local storage or default to dark
+        if (localStorage.theme === 'light') {
+            htmlElement.classList.remove('dark');
+        } else {
+            htmlElement.classList.add('dark'); // Default to dark
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (htmlElement.classList.contains('dark')) {
+                htmlElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                htmlElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        });
+
+        // --- Standard Upload Logic (Same as before) ---
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileCount = document.getElementById('fileCount');
+        const form = document.getElementById('uploadForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const progressArea = document.getElementById('progressArea');
+        const progressBar = document.getElementById('progressBar');
+        const statusText = document.getElementById('statusText');
+        const resultMessage = document.getElementById('resultMessage');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedPass = localStorage.getItem('driveUploadPass');
+            const savedName = localStorage.getItem('driveUploadName');
+            if(savedPass) { document.getElementById('pass').value = savedPass; }
+            if(savedName) { document.getElementById('username').value = savedName; }
+            if(savedPass || savedName) { document.getElementById('rememberMe').checked = true; }
+        });
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+        function highlight() { dropZone.classList.add('drag-active'); }
+        function unhighlight() { dropZone.classList.remove('drag-active'); }
+
+        dropZone.addEventListener('drop', handleDrop, false);
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            fileInput.files = dt.files;
+            updateFileCount();
+        }
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', updateFileCount);
+
+        function updateFileCount() {
+            const count = fileInput.files.length;
+            fileCount.textContent = count > 0 ? `${count} file(s) selected` : '';
+            fileCount.className = count > 0 ? "text-xs text-green-600 dark:text-green-400 mt-2 font-bold min-h-[1.5em]" : "text-xs text-blue-600 mt-2 font-bold min-h-[1.5em]";
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(fileInput.files.length === 0) {
+                showResult('Please select at least one file.', 'error');
+                return;
+            }
+
+            const remember = document.getElementById('rememberMe').checked;
+            const pass = document.getElementById('pass').value;
+            const name = document.getElementById('username').value;
+            if(remember) {
+                localStorage.setItem('driveUploadPass', pass);
+                localStorage.setItem('driveUploadName', name);
+            } else {
+                localStorage.removeItem('driveUploadPass');
+                localStorage.removeItem('driveUploadName');
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            progressArea.classList.remove('hidden');
+            resultMessage.classList.add('hidden');
+            
+            const files = Array.from(fileInput.files);
+            const totalFiles = files.length;
+            let successCount = 0;
+
+            for (let i = 0; i < totalFiles; i++) {
+                const file = files[i];
+                statusText.innerText = `Uploading ${i + 1} of ${totalFiles}: ${file.name}...`;
+                
+                try {
+                    const base64 = await toBase64(file);
+                    const payload = {
+                        password: pass,
+                        name: name,
+                        about: document.getElementById('about').value,
+                        files: [{
+                            name: file.name,
+                            fileName: file.name,
+                            mimeType: file.type,
+                            data: base64
+                        }]
+                    };
+
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if(result.success) {
+                        successCount++;
+                        const percent = ((successCount / totalFiles) * 100).toFixed(0);
+                        progressBar.style.width = `${percent}%`;
+                    } else {
+                        throw new Error(result.error);
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    showResult(`Error: ${err.message}`, 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span>Retry Upload</span><i class="fas fa-redo"></i>';
+                    return;
+                }
+            }
+
+            statusText.innerText = "Completed!";
+            showResult(`Successfully uploaded ${successCount} files!`, 'success');
+            form.reset();
+            fileCount.textContent = '';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>Upload Files</span><i class="fas fa-paper-plane"></i>';
+            setTimeout(() => { progressArea.classList.add('hidden'); progressBar.style.width = '0%'; }, 5000);
+        });
+
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+        });
+
+        function showResult(msg, type) {
+            resultMessage.textContent = msg;
+            resultMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700', 'bg-green-900', 'text-green-200', 'bg-red-900', 'text-red-200');
+            
+            // Dark mode specific alert colors
+            if(type === 'success') {
+                if(htmlElement.classList.contains('dark')) {
+                    resultMessage.classList.add('bg-green-900', 'text-green-200');
+                } else {
+                    resultMessage.classList.add('bg-green-100', 'text-green-700');
+                }
+            } else {
+                 if(htmlElement.classList.contains('dark')) {
+                    resultMessage.classList.add('bg-red-900', 'text-red-200');
+                } else {
+                    resultMessage.classList.add('bg-red-100', 'text-red-700');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
