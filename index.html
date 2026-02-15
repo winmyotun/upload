@@ -40,12 +40,13 @@
                 </div>
             </div>
 
-            <!-- Password Input -->
+            <!-- Password Input (UPDATED: Removed 'required') -->
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">Access Password</label>
                 <div class="relative">
                     <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
-                    <input type="password" id="pass" required placeholder="Enter password" 
+                    <!-- required attribute removed below -->
+                    <input type="password" id="pass" placeholder="Enter password (if required)" 
                         class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-gray-50 focus:bg-white">
                 </div>
             </div>
@@ -89,7 +90,7 @@
     <script>
         // ******************************************************
         // REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyANXAFs-kh0DUDQBNerlnZSXHWJBreYrzlg93spufRo9yAgKhZJ1noDmWd718V53Tp1Q/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5DUIpMA0UrDeJ9OJEyyJJyGXqGydCAQRKW-JyssL6nNc4TmLoLBlA-EojEvC98gOHgQ/exec';
         // ******************************************************
 
         const dropZone = document.getElementById('dropZone');
@@ -171,7 +172,7 @@
             const totalFiles = files.length;
             let successCount = 0;
 
-            // Upload Logic (One by One to avoid timeouts)
+            // Upload Logic
             for (let i = 0; i < totalFiles; i++) {
                 const file = files[i];
                 statusText.innerText = `Uploading ${i + 1} of ${totalFiles}: ${file.name}...`;
@@ -182,15 +183,14 @@
                         password: pass,
                         name: name,
                         about: document.getElementById('about').value,
-                        files: [{ // Send as list of 1 to match backend structure
-                            name: file.name, // Original object structure in GAS wasn't using this, but just in case
+                        files: [{
+                            name: file.name,
                             fileName: file.name,
                             mimeType: file.type,
                             data: base64
                         }]
                     };
 
-                    // Use plain text body to avoid CORS preflight issues
                     const response = await fetch(SCRIPT_URL, {
                         method: 'POST',
                         body: JSON.stringify(payload)
@@ -208,14 +208,13 @@
 
                 } catch (err) {
                     console.error(err);
-                    showResult(`Error uploading ${file.name}: ${err.message}`, 'error');
+                    showResult(`Error: ${err.message}`, 'error');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<span>Retry Upload</span><i class="fas fa-redo"></i>';
                     return; // Stop on error
                 }
             }
 
-            // Finish
             statusText.innerText = "Completed!";
             showResult(`Successfully uploaded ${successCount} files!`, 'success');
             form.reset();
