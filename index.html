@@ -251,6 +251,7 @@
         // REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5DUIpMA0UrDeJ9OJEyyJJyGXqGydCAQRKW-JyssL6nNc4TmLoLBlA-EojEvC98gOHgQ/exec';
         // ******************************************************
+    
 
         // --- Theme Toggle Logic ---
         const toggleBtn = document.getElementById('themeToggle');
@@ -273,12 +274,12 @@
             htmlElement.classList.remove('dark');
             updateThemeIcons(false);
         } else {
-            htmlElement.classList.add('dark');
+            htmlElement.classList.add('dark'); // Default Dark
             updateThemeIcons(true);
         }
 
         toggleBtn.addEventListener('click', (e) => {
-            e.preventDefault(); // Prevent form submit if inside form
+            e.preventDefault();
             if (htmlElement.classList.contains('dark')) {
                 htmlElement.classList.remove('dark');
                 localStorage.theme = 'light';
@@ -309,7 +310,7 @@
             if(savedPass || savedName) { document.getElementById('rememberMe').checked = true; }
         });
 
-        // Drag & Drop
+        // Drag & Drop Handlers
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             dropZone.addEventListener(eventName, preventDefaults, false);
         });
@@ -358,6 +359,7 @@
                 localStorage.removeItem('driveUploadName');
             }
 
+            // Start Upload Process
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
             progressArea.style.display = 'block';
@@ -369,6 +371,10 @@
 
             for (let i = 0; i < totalFiles; i++) {
                 const file = files[i];
+                
+                // Note: Removed client-side size check as requested.
+                // The server (Google Apps Script) will handle the size validation based on Settings.
+
                 statusText.innerText = `Uploading ${i + 1} of ${totalFiles}: ${file.name}...`;
                 
                 try {
@@ -385,8 +391,13 @@
                         }]
                     };
 
+                    // *** FIX FOR MOBILE: FORCE TEXT/PLAIN CONTENT TYPE ***
                     const response = await fetch(SCRIPT_URL, {
+                        redirect: "follow",
                         method: 'POST',
+                        headers: {
+                            "Content-Type": "text/plain;charset=utf-8", 
+                        },
                         body: JSON.stringify(payload)
                     });
                     
@@ -397,25 +408,34 @@
                         const percent = ((successCount / totalFiles) * 100).toFixed(0);
                         progressBar.style.width = `${percent}%`;
                     } else {
+                        // If Sheet Settings block the file (size/type), error comes here
                         throw new Error(result.error);
                     }
 
                 } catch (err) {
                     console.error(err);
-                    showResult(`Error: ${err.message}`, 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<span>Retry Upload</span><i class="fas fa-redo"></i>';
-                    return;
+                    // Show error but continue to next file
+                    showResult(`Error uploading ${file.name}: ${err.message}`, 'error');
                 }
             }
 
-            statusText.innerText = "Completed!";
-            showResult(`Successfully uploaded ${successCount} files!`, 'success');
-            form.reset();
-            fileCount.textContent = '';
+            statusText.innerText = "Process Completed.";
+            if(successCount === totalFiles) {
+                showResult(`Successfully uploaded all ${successCount} files!`, 'success');
+                form.reset();
+                fileCount.textContent = '';
+                setTimeout(() => { progressArea.style.display = 'none'; progressBar.style.width = '0%'; }, 5000);
+            } else if (successCount > 0) {
+                // Some files failed
+                // Keep the error message visible so user knows which one failed
+                const currentMsg = resultMessage.textContent; 
+                if(!currentMsg.includes("Error")) {
+                     showResult(`Uploaded ${successCount} of ${totalFiles} files.`, 'success');
+                }
+            }
+            
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<span>Upload Files</span><i class="fas fa-paper-plane"></i>';
-            setTimeout(() => { progressArea.style.display = 'none'; progressBar.style.width = '0%'; }, 5000);
         });
 
         const toBase64 = file => new Promise((resolve, reject) => {
@@ -431,5 +451,7 @@
             resultMessage.className = 'result-msg ' + type;
         }
     </script>
+
+       
 </body>
 </html>
