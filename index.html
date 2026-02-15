@@ -1,70 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure Drive Upload</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        // Tailwind Config to support custom colors if needed
+        tailwind.config = {
+            darkMode: 'class', // Enable class-based dark mode
+        }
+    </script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Segoe UI', sans-serif; }
+        /* Smooth transition for theme toggle */
+        body, div, input, button, i { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         .drag-active { border-color: #3b82f6 !important; background-color: #eff6ff !important; }
+        /* Dark mode specific drag active */
+        .dark .drag-active { background-color: #1f2937 !important; border-color: #60a5fa !important; }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen p-4 bg-gray-100 dark:bg-black text-gray-800 dark:text-gray-200">
 
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-8 transform transition-all hover:scale-[1.01]">
+    <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-lg p-8 transform transition-all hover:scale-[1.01]">
+        
+        <!-- Theme Toggle Button (Icon Only) -->
+        <button id="themeToggle" class="absolute top-5 right-5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-yellow-400 focus:outline-none text-xl">
+            <i class="fas fa-sun hidden dark:block"></i> <!-- Shows in Dark Mode (to switch to light) -->
+            <i class="fas fa-moon dark:hidden"></i>    <!-- Shows in Light Mode (to switch to dark) -->
+        </button>
+
         <div class="text-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-800 tracking-tight">File Upload</h1>
-            <p class="text-gray-500 text-sm mt-1">Direct upload to Google Drive</p>
+            <h1 class="text-3xl font-bold tracking-tight text-gray-800 dark:text-white">File Upload</h1>
+            <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Direct upload to Google Drive</p>
         </div>
 
         <form id="uploadForm" class="space-y-5">
             <!-- Name Input -->
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Your Name</label>
+                <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Your Name</label>
                 <div class="relative">
                     <i class="fas fa-user absolute left-3 top-3 text-gray-400"></i>
                     <input type="text" id="username" required placeholder="Enter your full name" 
-                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-gray-50 focus:bg-white">
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-gray-50 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 focus:bg-white dark:focus:bg-gray-800">
                 </div>
             </div>
 
             <!-- File Description/Name Input -->
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">File Description / Title</label>
+                <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">File Description</label>
                 <div class="relative">
                     <i class="fas fa-tag absolute left-3 top-3 text-gray-400"></i>
                     <input type="text" id="about" placeholder="What are these files about?" 
-                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-gray-50 focus:bg-white">
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-gray-50 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 focus:bg-white dark:focus:bg-gray-800">
                 </div>
             </div>
 
-            <!-- Password Input (UPDATED: Removed 'required') -->
+            <!-- Password Input -->
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Access Password</label>
+                <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Access Password</label>
                 <div class="relative">
                     <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
-                    <!-- required attribute removed below -->
                     <input type="password" id="pass" placeholder="Enter password (if required)" 
-                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-gray-50 focus:bg-white">
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-gray-50 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 focus:bg-white dark:focus:bg-gray-800">
                 </div>
             </div>
 
             <!-- Drag & Drop Area -->
-            <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer transition duration-300 group hover:border-blue-400 hover:bg-gray-50">
+            <div id="dropZone" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer transition duration-300 group hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800">
                 <input type="file" id="fileInput" multiple required class="hidden">
                 <div class="mb-3">
-                    <i class="fas fa-cloud-upload-alt text-5xl text-blue-100 group-hover:text-blue-500 transition duration-300"></i>
+                    <i class="fas fa-cloud-upload-alt text-5xl text-blue-100 dark:text-gray-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition duration-300"></i>
                 </div>
-                <p class="text-sm text-gray-600 font-medium">Click to browse or drag files here</p>
-                <p id="fileCount" class="text-xs text-blue-600 mt-2 font-bold min-h-[1.5em]"></p>
+                <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Click to browse or drag files here</p>
+                <p id="fileCount" class="text-xs text-blue-600 dark:text-blue-400 mt-2 font-bold min-h-[1.5em]"></p>
             </div>
 
             <!-- Remember Me -->
             <div class="flex items-center">
-                <input type="checkbox" id="rememberMe" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                <label for="rememberMe" class="ml-2 text-sm text-gray-600 cursor-pointer">Remember Name & Password</label>
+                <input type="checkbox" id="rememberMe" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+                <label for="rememberMe" class="ml-2 text-sm cursor-pointer text-gray-600 dark:text-gray-400">Remember Name & Password</label>
             </div>
 
             <!-- Submit Button -->
@@ -77,169 +93,5 @@
 
         <!-- Progress Area -->
         <div id="progressArea" class="hidden mt-6 space-y-3">
-            <div class="w-full bg-gray-200 rounded-full h-2">
-                <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-            </div>
-            <p id="statusText" class="text-center text-xs text-gray-500 font-medium">Preparing...</p>
-        </div>
-
-        <!-- Result Message -->
-        <div id="resultMessage" class="hidden mt-4 p-3 rounded-lg text-center text-sm font-semibold"></div>
-    </div>
-
-    <script>
-        // ******************************************************
-        // REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5DUIpMA0UrDeJ9OJEyyJJyGXqGydCAQRKW-JyssL6nNc4TmLoLBlA-EojEvC98gOHgQ/exec';
-        // ******************************************************
-
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-        const fileCount = document.getElementById('fileCount');
-        const form = document.getElementById('uploadForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const progressArea = document.getElementById('progressArea');
-        const progressBar = document.getElementById('progressBar');
-        const statusText = document.getElementById('statusText');
-        const resultMessage = document.getElementById('resultMessage');
-
-        // Load Saved Data
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedPass = localStorage.getItem('driveUploadPass');
-            const savedName = localStorage.getItem('driveUploadName');
-            if(savedPass) { document.getElementById('pass').value = savedPass; }
-            if(savedName) { document.getElementById('username').value = savedName; }
-            if(savedPass || savedName) { document.getElementById('rememberMe').checked = true; }
-        });
-
-        // Drag & Drop Effects
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, highlight, false);
-        });
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, unhighlight, false);
-        });
-        function highlight() { dropZone.classList.add('drag-active'); }
-        function unhighlight() { dropZone.classList.remove('drag-active'); }
-
-        dropZone.addEventListener('drop', handleDrop, false);
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            fileInput.files = dt.files;
-            updateFileCount();
-        }
-
-        dropZone.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', updateFileCount);
-
-        function updateFileCount() {
-            const count = fileInput.files.length;
-            fileCount.textContent = count > 0 ? `${count} file(s) selected` : '';
-            fileCount.className = count > 0 ? "text-xs text-green-600 mt-2 font-bold min-h-[1.5em]" : "text-xs text-blue-600 mt-2 font-bold min-h-[1.5em]";
-        }
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if(fileInput.files.length === 0) {
-                showResult('Please select at least one file.', 'error');
-                return;
-            }
-
-            // Save Credentials
-            const remember = document.getElementById('rememberMe').checked;
-            const pass = document.getElementById('pass').value;
-            const name = document.getElementById('username').value;
-            if(remember) {
-                localStorage.setItem('driveUploadPass', pass);
-                localStorage.setItem('driveUploadName', name);
-            } else {
-                localStorage.removeItem('driveUploadPass');
-                localStorage.removeItem('driveUploadName');
-            }
-
-            // UI Changes
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            progressArea.classList.remove('hidden');
-            resultMessage.classList.add('hidden');
-            
-            const files = Array.from(fileInput.files);
-            const totalFiles = files.length;
-            let successCount = 0;
-
-            // Upload Logic
-            for (let i = 0; i < totalFiles; i++) {
-                const file = files[i];
-                statusText.innerText = `Uploading ${i + 1} of ${totalFiles}: ${file.name}...`;
-                
-                try {
-                    const base64 = await toBase64(file);
-                    const payload = {
-                        password: pass,
-                        name: name,
-                        about: document.getElementById('about').value,
-                        files: [{
-                            name: file.name,
-                            fileName: file.name,
-                            mimeType: file.type,
-                            data: base64
-                        }]
-                    };
-
-                    const response = await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if(result.success) {
-                        successCount++;
-                        const percent = ((successCount / totalFiles) * 100).toFixed(0);
-                        progressBar.style.width = `${percent}%`;
-                    } else {
-                        throw new Error(result.error);
-                    }
-
-                } catch (err) {
-                    console.error(err);
-                    showResult(`Error: ${err.message}`, 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<span>Retry Upload</span><i class="fas fa-redo"></i>';
-                    return; // Stop on error
-                }
-            }
-
-            statusText.innerText = "Completed!";
-            showResult(`Successfully uploaded ${successCount} files!`, 'success');
-            form.reset();
-            fileCount.textContent = '';
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<span>Upload Files</span><i class="fas fa-paper-plane"></i>';
-            setTimeout(() => { progressArea.classList.add('hidden'); progressBar.style.width = '0%'; }, 5000);
-        });
-
-        const toBase64 = file => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = error => reject(error);
-        });
-
-        function showResult(msg, type) {
-            resultMessage.textContent = msg;
-            resultMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
-            if(type === 'success') {
-                resultMessage.classList.add('bg-green-100', 'text-green-700');
-            } else {
-                resultMessage.classList.add('bg-red-100', 'text-red-700');
-            }
-        }
-    </script>
-</body>
-</html>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-3
