@@ -2,105 +2,248 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Secure Drive Upload</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons (Lightweight) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script>
-        // Tailwind Config to support custom colors if needed
-        tailwind.config = {
-            darkMode: 'class', // Enable class-based dark mode
-        }
-    </script>
+    
     <style>
-        body { font-family: 'Segoe UI', sans-serif; }
-        /* Smooth transition for theme toggle */
-        body, div, input, button, i { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
-        .drag-active { border-color: #3b82f6 !important; background-color: #eff6ff !important; }
-        /* Dark mode specific drag active */
-        .dark .drag-active { background-color: #1f2937 !important; border-color: #60a5fa !important; }
+        /* --- 1. Pure CSS Variables & Reset --- */
+        :root {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --border-color: #d1d5db;
+            --input-bg: #f9fafb;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --drag-bg: #eff6ff;
+            --drag-border: #3b82f6;
+        }
+
+        /* Dark Mode Colors */
+        html.dark {
+            --bg-color: #000000;
+            --card-bg: #111827;
+            --text-main: #e5e7eb;
+            --text-sub: #9ca3af;
+            --border-color: #374151;
+            --input-bg: #1f2937;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --drag-bg: #1f2937;
+            --drag-border: #60a5fa;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* --- 2. Card Design --- */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 480px;
+            padding: 32px;
+            position: relative;
+            transition: transform 0.2s, background-color 0.3s;
+        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 5px; }
+        .header p { color: var(--text-sub); font-size: 14px; }
+
+        /* --- 3. Form Elements --- */
+        .form-group { margin-bottom: 20px; }
+        .label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-main); }
+        
+        .input-wrapper { position: relative; }
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 16px 12px 42px; /* Space for icon */
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 15px;
+            transition: border-color 0.2s, background-color 0.3s;
+        }
+        
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* --- 4. Drag & Drop Zone --- */
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: transparent;
+        }
+        
+        .drop-zone:hover, .drop-zone.drag-active {
+            border-color: var(--primary);
+            background-color: var(--drag-bg); /* Use slight tint */
+        }
+        
+        .drop-zone i { font-size: 48px; color: var(--border-color); margin-bottom: 10px; transition: color 0.3s; }
+        .drop-zone:hover i { color: var(--primary); }
+        
+        .drop-text { font-weight: 500; color: var(--text-sub); }
+        .file-status { margin-top: 10px; font-size: 13px; font-weight: bold; color: var(--primary); min-height: 20px; }
+
+        /* --- 5. Button & Toggles --- */
+        .checkbox-wrapper { display: flex; align-items: center; margin-bottom: 20px; cursor: pointer; }
+        .checkbox-wrapper input { width: 16px; height: 16px; margin-right: 8px; accent-color: var(--primary); }
+        .checkbox-wrapper label { font-size: 14px; color: var(--text-sub); cursor: pointer; }
+
+        .btn-submit {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background-color 0.2s;
+        }
+        .btn-submit:hover { background-color: var(--primary-hover); }
+        .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        /* Theme Toggle */
+        .theme-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+        .theme-btn:hover { color: var(--primary); }
+
+        /* Progress Bar */
+        .progress-container { margin-top: 20px; display: none; }
+        .progress-bar-bg { width: 100%; background-color: var(--border-color); height: 8px; border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background-color: var(--primary); width: 0%; transition: width 0.3s; }
+        .progress-text { text-align: center; font-size: 12px; margin-top: 5px; color: var(--text-sub); }
+
+        /* Result Message */
+        .result-msg { margin-top: 15px; padding: 10px; border-radius: 8px; text-align: center; font-size: 14px; font-weight: 600; display: none; }
+        .success { background-color: #d1fae5; color: #065f46; } /* Green */
+        html.dark .success { background-color: #064e3b; color: #d1fae5; }
+        .error { background-color: #fee2e2; color: #991b1b; } /* Red */
+        html.dark .error { background-color: #7f1d1d; color: #fee2e2; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4 bg-gray-100 dark:bg-black text-gray-800 dark:text-gray-200">
+<body>
 
-    <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-lg p-8 transform transition-all hover:scale-[1.01]">
-        
-        <!-- Theme Toggle Button (Icon Only) -->
-        <button id="themeToggle" class="absolute top-5 right-5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-yellow-400 focus:outline-none text-xl">
-            <i class="fas fa-sun hidden dark:block"></i> <!-- Shows in Dark Mode (to switch to light) -->
-            <i class="fas fa-moon dark:hidden"></i>    <!-- Shows in Light Mode (to switch to dark) -->
+    <div class="card">
+        <!-- Theme Toggle -->
+        <button id="themeToggle" class="theme-btn">
+            <i id="sunIcon" class="fas fa-sun hidden"></i>
+            <i id="moonIcon" class="fas fa-moon"></i>
         </button>
 
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-bold tracking-tight text-gray-800 dark:text-white">File Upload</h1>
-            <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Direct upload to Google Drive</p>
+        <div class="header">
+            <h1>File Upload</h1>
+            <p>Direct upload to Google Drive</p>
         </div>
 
-        <form id="uploadForm" class="space-y-5">
+        <form id="uploadForm">
             <!-- Name Input -->
-            <div>
-                <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Your Name</label>
-                <div class="relative">
-                    <i class="fas fa-user absolute left-3 top-3 text-gray-400"></i>
-                    <input type="text" id="username" required placeholder="Enter your full name" 
-                        class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-gray-50 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 focus:bg-white dark:focus:bg-gray-800">
+            <div class="form-group">
+                <label class="label">Your Name</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" class="form-input" required placeholder="Enter your full name">
                 </div>
             </div>
 
-            <!-- File Description/Name Input -->
-            <div>
-                <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">File Description</label>
-                <div class="relative">
-                    <i class="fas fa-tag absolute left-3 top-3 text-gray-400"></i>
-                    <input type="text" id="about" placeholder="What are these files about?" 
-                        class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-gray-50 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 focus:bg-white dark:focus:bg-gray-800">
+            <!-- Description Input -->
+            <div class="form-group">
+                <label class="label">File Description</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-tag"></i>
+                    <input type="text" id="about" class="form-input" placeholder="What are these files about?">
                 </div>
             </div>
 
             <!-- Password Input -->
-            <div>
-                <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Access Password</label>
-                <div class="relative">
-                    <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
-                    <input type="password" id="pass" placeholder="Enter password (if required)" 
-                        class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-gray-50 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 focus:bg-white dark:focus:bg-gray-800">
+            <div class="form-group">
+                <label class="label">Access Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="pass" class="form-input" placeholder="Enter password (if required)">
                 </div>
             </div>
 
-            <!-- Drag & Drop Area -->
-            <div id="dropZone" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer transition duration-300 group hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800">
-                <input type="file" id="fileInput" multiple required class="hidden">
-                <div class="mb-3">
-                    <i class="fas fa-cloud-upload-alt text-5xl text-blue-100 dark:text-gray-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition duration-300"></i>
-                </div>
-                <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Click to browse or drag files here</p>
-                <p id="fileCount" class="text-xs text-blue-600 dark:text-blue-400 mt-2 font-bold min-h-[1.5em]"></p>
+            <!-- Drag & Drop -->
+            <div id="dropZone" class="drop-zone">
+                <input type="file" id="fileInput" multiple required class="hidden" style="display:none;">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p class="drop-text">Click to browse or drag files here</p>
+                <p id="fileCount" class="file-status"></p>
             </div>
 
             <!-- Remember Me -->
-            <div class="flex items-center">
-                <input type="checkbox" id="rememberMe" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
-                <label for="rememberMe" class="ml-2 text-sm cursor-pointer text-gray-600 dark:text-gray-400">Remember Name & Password</label>
+            <div class="checkbox-wrapper" style="margin-top: 15px;">
+                <input type="checkbox" id="rememberMe">
+                <label for="rememberMe">Remember Name & Password</label>
             </div>
 
             <!-- Submit Button -->
-            <button type="submit" id="submitBtn" 
-                class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 rounded-lg shadow-lg transform transition active:scale-95 flex justify-center items-center gap-2">
+            <button type="submit" id="submitBtn" class="btn-submit">
                 <span>Upload Files</span>
                 <i class="fas fa-paper-plane"></i>
             </button>
         </form>
 
         <!-- Progress Area -->
-        <div id="progressArea" class="hidden mt-6 space-y-3">
-            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+        <div id="progressArea" class="progress-container">
+            <div class="progress-bar-bg">
+                <div id="progressBar" class="progress-bar-fill"></div>
             </div>
-            <p id="statusText" class="text-center text-xs font-medium text-gray-500 dark:text-gray-400">Preparing...</p>
+            <p id="statusText" class="progress-text">Preparing...</p>
         </div>
 
         <!-- Result Message -->
-        <div id="resultMessage" class="hidden mt-4 p-3 rounded-lg text-center text-sm font-semibold"></div>
+        <div id="resultMessage" class="result-msg"></div>
     </div>
 
     <script>
@@ -109,28 +252,45 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5DUIpMA0UrDeJ9OJEyyJJyGXqGydCAQRKW-JyssL6nNc4TmLoLBlA-EojEvC98gOHgQ/exec';
         // ******************************************************
 
-        // Theme Toggle Logic
+        // --- Theme Toggle Logic ---
         const toggleBtn = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
         const htmlElement = document.documentElement;
 
-        // Check local storage or default to dark
-        if (localStorage.theme === 'light') {
-            htmlElement.classList.remove('dark');
-        } else {
-            htmlElement.classList.add('dark'); // Default to dark
+        function updateThemeIcons(isDark) {
+            if (isDark) {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
         }
 
-        toggleBtn.addEventListener('click', () => {
+        // Initialize Theme (Default to Dark)
+        if (localStorage.theme === 'light') {
+            htmlElement.classList.remove('dark');
+            updateThemeIcons(false);
+        } else {
+            htmlElement.classList.add('dark');
+            updateThemeIcons(true);
+        }
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent form submit if inside form
             if (htmlElement.classList.contains('dark')) {
                 htmlElement.classList.remove('dark');
                 localStorage.theme = 'light';
+                updateThemeIcons(false);
             } else {
                 htmlElement.classList.add('dark');
                 localStorage.theme = 'dark';
+                updateThemeIcons(true);
             }
         });
 
-        // --- Standard Upload Logic (Same as before) ---
+        // --- Upload Logic ---
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const fileCount = document.getElementById('fileCount');
@@ -149,6 +309,7 @@
             if(savedPass || savedName) { document.getElementById('rememberMe').checked = true; }
         });
 
+        // Drag & Drop
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             dropZone.addEventListener(eventName, preventDefaults, false);
         });
@@ -176,7 +337,6 @@
         function updateFileCount() {
             const count = fileInput.files.length;
             fileCount.textContent = count > 0 ? `${count} file(s) selected` : '';
-            fileCount.className = count > 0 ? "text-xs text-green-600 dark:text-green-400 mt-2 font-bold min-h-[1.5em]" : "text-xs text-blue-600 mt-2 font-bold min-h-[1.5em]";
         }
 
         form.addEventListener('submit', async (e) => {
@@ -189,6 +349,7 @@
             const remember = document.getElementById('rememberMe').checked;
             const pass = document.getElementById('pass').value;
             const name = document.getElementById('username').value;
+            
             if(remember) {
                 localStorage.setItem('driveUploadPass', pass);
                 localStorage.setItem('driveUploadName', name);
@@ -199,8 +360,8 @@
 
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            progressArea.classList.remove('hidden');
-            resultMessage.classList.add('hidden');
+            progressArea.style.display = 'block';
+            resultMessage.style.display = 'none';
             
             const files = Array.from(fileInput.files);
             const totalFiles = files.length;
@@ -254,7 +415,7 @@
             fileCount.textContent = '';
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<span>Upload Files</span><i class="fas fa-paper-plane"></i>';
-            setTimeout(() => { progressArea.classList.add('hidden'); progressBar.style.width = '0%'; }, 5000);
+            setTimeout(() => { progressArea.style.display = 'none'; progressBar.style.width = '0%'; }, 5000);
         });
 
         const toBase64 = file => new Promise((resolve, reject) => {
@@ -266,22 +427,8 @@
 
         function showResult(msg, type) {
             resultMessage.textContent = msg;
-            resultMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700', 'bg-green-900', 'text-green-200', 'bg-red-900', 'text-red-200');
-            
-            // Dark mode specific alert colors
-            if(type === 'success') {
-                if(htmlElement.classList.contains('dark')) {
-                    resultMessage.classList.add('bg-green-900', 'text-green-200');
-                } else {
-                    resultMessage.classList.add('bg-green-100', 'text-green-700');
-                }
-            } else {
-                 if(htmlElement.classList.contains('dark')) {
-                    resultMessage.classList.add('bg-red-900', 'text-red-200');
-                } else {
-                    resultMessage.classList.add('bg-red-100', 'text-red-700');
-                }
-            }
+            resultMessage.style.display = 'block';
+            resultMessage.className = 'result-msg ' + type;
         }
     </script>
 </body>
